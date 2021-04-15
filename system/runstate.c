@@ -486,6 +486,8 @@ void qemu_system_reset(ShutdownCause reason)
 
     mc = current_machine ? MACHINE_GET_CLASS(current_machine) : NULL;
 
+    cpus_control_pre_system_reset();
+
     cpu_synchronize_all_states();
 
     if (mc && mc->reset) {
@@ -502,6 +504,8 @@ void qemu_system_reset(ShutdownCause reason)
         qapi_event_send_reset(shutdown_caused_by_guest(reason), reason);
     }
     cpu_synchronize_all_post_reset();
+
+    cpus_control_post_system_reset();
 }
 
 /*

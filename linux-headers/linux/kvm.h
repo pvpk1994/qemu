@@ -1583,6 +1583,10 @@ struct kvm_s390_ucas_mapping {
 #define KVM_GET_DEVICE_ATTR	  _IOW(KVMIO,  0xe2, struct kvm_device_attr)
 #define KVM_HAS_DEVICE_ATTR	  _IOW(KVMIO,  0xe3, struct kvm_device_attr)
 
+/* ioctls for control vcpu setup during system reset */
+#define KVM_CONTROL_VCPU_PRE_SYSTEM_RESET  _IO(KVMIO, 0xe8)
+#define KVM_CONTROL_VCPU_POST_SYSTEM_RESET _IO(KVMIO, 0xe9)
+
 /*
  * ioctls for vcpu fds
  */
