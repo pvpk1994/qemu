@@ -550,4 +550,6 @@ void migration_rp_kick(MigrationState *s);
 
 int migration_stop_vm(RunState state);
 
+bool memcrypt_enabled(void);
+
 #endif
