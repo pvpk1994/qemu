@@ -874,6 +874,15 @@
 # @mode: Migration mode. See description in @MigMode. Default is 'normal'.
 #        (Since 8.2)
 #
+# @sev-pdh: The target host platform diffie-hellman key encoded in base64
+#           (Since 4.2)
+#
+# @sev-plat-cert: The target host platform certificate chain encoded in base64
+#                 (Since 4.2)
+#
+# @sev-amd-cert: AMD certificate chain which include ASK and OCA encoded in
+#                base64 (Since 4.2)
+#
 # Features:
 #
 # @deprecated: Member @block-incremental is deprecated.  Use
@@ -907,7 +916,8 @@
            'block-bitmap-mapping',
            { 'name': 'x-vcpu-dirty-limit-period', 'features': ['unstable'] },
            'vcpu-dirty-limit',
-           'mode'] }
+           'mode',
+           'sev-pdh', 'sev-plat-cert', 'sev-amd-cert'] }
 
 ##
 # @MigrateSetParameters:
@@ -1062,6 +1072,15 @@
 # @mode: Migration mode. See description in @MigMode. Default is 'normal'.
 #        (Since 8.2)
 #
+# @sev-pdh: The target host platform diffie-hellman key encoded in base64
+#           (Since 4.2)
+#
+# @sev-plat-cert: The target host platform certificate chain encoded in base64
+#                 (Since 4.2)
+#
+# @sev-amd-cert: AMD certificate chain which include ASK and OCA encoded in
+#                base64 (Since 4.2)
+#
 # Features:
 #
 # @deprecated: Member @block-incremental is deprecated.  Use
@@ -1115,7 +1134,11 @@
             '*x-vcpu-dirty-limit-period': { 'type': 'uint64',
                                             'features': [ 'unstable' ] },
             '*vcpu-dirty-limit': 'uint64',
-            '*mode': 'MigMode'} }
+            '*mode': 'MigMode',
+            '*sev-pdh': 'StrOrNull',
+            '*sev-plat-cert': 'StrOrNull',
+            '*sev-amd-cert' : 'StrOrNull' } }
+
 
 ##
 # @migrate-set-parameters:
@@ -1290,6 +1313,15 @@
 # @mode: Migration mode. See description in @MigMode. Default is 'normal'.
 #        (Since 8.2)
 #
+# @sev-pdh: The target host platform diffie-hellman key encoded in base64
+#           (Since 4.2)
+#
+# @sev-plat-cert: The target host platform certificate chain encoded in base64
+#                 (Since 4.2)
+#
+# @sev-amd-cert: AMD certificate chain which include ASK and OCA encoded in
+#                base64 (Since 4.2)
+#
 # Features:
 #
 # @deprecated: Member @block-incremental is deprecated.  Use
@@ -1340,7 +1372,10 @@
             '*x-vcpu-dirty-limit-period': { 'type': 'uint64',
                                             'features': [ 'unstable' ] },
             '*vcpu-dirty-limit': 'uint64',
-            '*mode': 'MigMode'} }
+            '*mode': 'MigMode',
+            '*sev-pdh': 'str',
+            '*sev-plat-cert': 'str',
+            '*sev-amd-cert' : 'str'} }
 
 ##
 # @query-migrate-parameters:
