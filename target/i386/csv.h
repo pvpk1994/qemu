@@ -14,6 +14,8 @@
 #ifndef I386_CSV_H
 #define I386_CSV_H
 
+#include "qapi/qapi-commands-misc-target.h"
+
 #ifdef CONFIG_CSV
 
 #include "cpu.h"
@@ -38,9 +40,12 @@ static bool __attribute__((unused)) is_hygon_cpu(void)
         return false;
 }
 
+bool csv3_enabled(void);
+
 #else
 
 #define is_hygon_cpu() (false)
+#define csv3_enabled() (false)
 
 #endif
 
@@ -63,5 +68,18 @@ int csv_queue_incoming_page(QEMUFile *f, uint8_t *ptr);
 int csv_load_queued_incoming_pages(QEMUFile *f);
 int csv_save_outgoing_cpu_state(QEMUFile *f, uint64_t *bytes_sent);
 int csv_load_incoming_cpu_state(QEMUFile *f);
+
+/* CSV3 */
+#define GUEST_POLICY_CSV3_BIT     (1 << 6)
+
+struct Csv3GuestState {
+    uint32_t policy;
+    int sev_fd;
+    void *state;
+};
+
+typedef struct Csv3GuestState Csv3GuestState;
+
+extern struct Csv3GuestState csv3_guest;
 
 #endif
