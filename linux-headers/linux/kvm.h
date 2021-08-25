@@ -2066,6 +2066,7 @@ enum csv3_cmd_id {
 
 	KVM_CSV3_INIT = KVM_CSV3_NR_MIN,
 	KVM_CSV3_LAUNCH_ENCRYPT_DATA,
+	KVM_CSV3_LAUNCH_ENCRYPT_VMCB,
 };
 
 struct kvm_csv3_launch_encrypt_data {
