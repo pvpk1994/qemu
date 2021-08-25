@@ -2060,6 +2060,17 @@ struct kvm_csv_command_batch {
 	__u64 csv_batch_list_uaddr;
 };
 
+/* CSV3 command */
+enum csv3_cmd_id {
+	KVM_CSV3_NR_MIN = 0xc0,
+
+	KVM_CSV3_INIT = KVM_CSV3_NR_MIN,
+};
+
+struct kvm_csv3_init_data {
+	__u64 nodemask;
+};
+
 #define KVM_DEV_ASSIGN_ENABLE_IOMMU	(1 << 0)
 #define KVM_DEV_ASSIGN_PCI_2_3		(1 << 1)
 #define KVM_DEV_ASSIGN_MASK_INTX	(1 << 2)
