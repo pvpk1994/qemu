@@ -78,3 +78,11 @@ config ACPI_ERST
 config ACPI_CXL
     bool
     depends on ACPI
+
+config ACPI_SW64_PM
+    bool
+    depends on ACPI
+
+config GPIO_SUNWAY
+    bool
+    depends on ACPI

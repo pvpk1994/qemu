@@ -1490,6 +1490,18 @@ Aml *aml_dword_io(AmlMinFixed min_fixed, AmlMaxFixed max_fixed,
                             isa_ranges);
 }
 
+Aml *aml_qword_io(AmlMinFixed min_fixed, AmlMaxFixed max_fixed,
+                 AmlDecode dec, AmlISARanges isa_ranges,
+                 uint64_t addr_gran, uint64_t addr_min,
+                 uint64_t addr_max, uint64_t addr_trans,
+                 uint64_t len)
+
+{
+    return aml_qword_as_desc(AML_IO_RANGE, min_fixed, max_fixed, dec,
+                            addr_gran, addr_min, addr_max, addr_trans, len,
+                            isa_ranges);
+}
+
 /*
  * ACPI 1.0b: 6.4.3.5.4 ASL Macros for DWORD Address Space Descriptor
  *

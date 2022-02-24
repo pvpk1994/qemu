@@ -187,6 +187,10 @@ enum bfd_architecture
 #define bfd_mach_alpha_ev4  0x10
 #define bfd_mach_alpha_ev5  0x20
 #define bfd_mach_alpha_ev6  0x30
+  bfd_arch_sw64,       /* Sw64 */
+#define bfd_mach_sw64 1
+#define bfd_mach_sw64_core3 0x10
+#define bfd_mach_sw64_core4 0x20
   bfd_arch_arm,        /* Advanced Risc Machines ARM */
 #define bfd_mach_arm_unknown  0
 #define bfd_mach_arm_2        1
@@ -425,6 +429,8 @@ int print_insn_h8500            (bfd_vma, disassemble_info*);
 int print_insn_arm_a64          (bfd_vma, disassemble_info*);
 int print_insn_alpha            (bfd_vma, disassemble_info*);
 disassembler_ftype arc_get_disassembler (int, int);
+int print_insn_sw64             (bfd_vma, disassemble_info*);
+int print_insn_arm              (bfd_vma, disassemble_info*);
 int print_insn_sparc            (bfd_vma, disassemble_info*);
 int print_insn_big_a29k         (bfd_vma, disassemble_info*);
 int print_insn_little_a29k      (bfd_vma, disassemble_info*);

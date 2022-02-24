@@ -2631,7 +2631,7 @@ SRST
 ERST
 
 DEF("no-acpi", 0, QEMU_OPTION_no_acpi,
-           "-no-acpi        disable ACPI\n", QEMU_ARCH_I386 | QEMU_ARCH_ARM)
+           "-no-acpi        disable ACPI\n", QEMU_ARCH_I386 | QEMU_ARCH_ARM | QEMU_ARCH_SW64)
 SRST
 ``-no-acpi``
     Disable ACPI (Advanced Configuration and Power Interface) support.
@@ -2690,7 +2690,7 @@ DEF("smbios", HAS_ARG, QEMU_OPTION_smbios,
     "                specify SMBIOS type 17 fields\n"
     "-smbios type=41[,designation=str][,kind=str][,instance=%d][,pcidev=str]\n"
     "                specify SMBIOS type 41 fields\n",
-    QEMU_ARCH_I386 | QEMU_ARCH_ARM | QEMU_ARCH_LOONGARCH)
+    QEMU_ARCH_I386 | QEMU_ARCH_ARM | QEMU_ARCH_LOONGARCH | QEMU_ARCH_SW64)
 SRST
 ``-smbios file=binary``
     Load SMBIOS entry from binary file.
@@ -4511,7 +4511,7 @@ ERST
 DEF("enable-kvm", 0, QEMU_OPTION_enable_kvm, \
     "-enable-kvm     enable KVM full virtualization support\n",
     QEMU_ARCH_ARM | QEMU_ARCH_I386 | QEMU_ARCH_MIPS | QEMU_ARCH_PPC |
-    QEMU_ARCH_RISCV | QEMU_ARCH_S390X)
+    QEMU_ARCH_RISCV | QEMU_ARCH_S390X | QEMU_ARCH_SW64)
 SRST
 ``-enable-kvm``
     Enable KVM full virtualization support. This option is only

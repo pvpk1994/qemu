@@ -102,6 +102,61 @@ tcg_gen_qemu_st_i128(TCGv_i128 v, TCGv a, TCGArg i, MemOp m)
     tcg_gen_qemu_st_i128_chk(v, tcgv_tl_temp(a), i, m, TCG_TYPE_TL);
 }
 
+static inline void tcg_gen_qemu_ld8u(TCGv ret, TCGv addr, int mem_index)
+{
+    tcg_gen_qemu_ld_tl(ret, addr, mem_index, MO_UB);
+}
+
+static inline void tcg_gen_qemu_ld8s(TCGv ret, TCGv addr, int mem_index)
+{
+    tcg_gen_qemu_ld_tl(ret, addr, mem_index, MO_SB);
+}
+
+static inline void tcg_gen_qemu_st8(TCGv arg, TCGv addr, int mem_index)
+{
+    tcg_gen_qemu_st_tl(arg, addr, mem_index, MO_UB);
+}
+
+static inline void tcg_gen_qemu_st16(TCGv arg, TCGv addr, int mem_index)
+{
+    tcg_gen_qemu_st_tl(arg, addr, mem_index, MO_TEUW);
+}
+
+static inline void tcg_gen_qemu_ld16u(TCGv ret, TCGv addr, int mem_index)
+{
+    tcg_gen_qemu_ld_tl(ret, addr, mem_index, MO_TEUW);
+}
+
+static inline void tcg_gen_qemu_ld16s(TCGv ret, TCGv addr, int mem_index)
+{
+    tcg_gen_qemu_ld_tl(ret, addr, mem_index, MO_TESW);
+}
+
+static inline void tcg_gen_qemu_ld32u(TCGv ret, TCGv addr, int mem_index)
+{
+    tcg_gen_qemu_ld_tl(ret, addr, mem_index, MO_TEUL);
+}
+
+static inline void tcg_gen_qemu_ld32s(TCGv ret, TCGv addr, int mem_index)
+{
+    tcg_gen_qemu_ld_tl(ret, addr, mem_index, MO_TESL);
+}
+
+static inline void tcg_gen_qemu_st32(TCGv arg, TCGv addr, int mem_index)
+{
+    tcg_gen_qemu_st_tl(arg, addr, mem_index, MO_TEUL);
+}
+
+static inline void tcg_gen_qemu_ld64(TCGv_i64 ret, TCGv addr, int mem_index)
+{
+    tcg_gen_qemu_ld_i64(ret, addr, mem_index, MO_TEUQ);
+}
+
+static inline void tcg_gen_qemu_st64(TCGv_i64 arg, TCGv addr, int mem_index)
+{
+    tcg_gen_qemu_st_i64(arg, addr, mem_index, MO_TEUQ);
+}
+
 #define DEF_ATOMIC2(N, S)                                               \
     static inline void N##_##S(TCGv_##S r, TCGv a, TCGv_##S v,          \
                                TCGArg i, MemOp m)                       \

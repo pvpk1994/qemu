@@ -1995,6 +1995,24 @@ static bool init_guest_commpage(void)
 
 #endif /* TARGET_HPPA */
 
+#ifdef TARGET_SW64
+
+#define ELF_CLASS  ELFCLASS64
+#define ELF_ARCH  EM_SW64
+
+#define ELF_START_MMAP (0x30000000000ULL)
+
+/* TODO: todo after */
+static inline void init_thread(struct target_pt_regs *regs,
+                               struct image_info *infop)
+{
+    regs->pc = infop->entry;
+    /* regs->ps = 8; */
+    regs->usp = infop->start_stack;
+}
+
+#endif /* TARGET_SW64 */
+
 #ifdef TARGET_XTENSA
 
 #define ELF_CLASS       ELFCLASS32

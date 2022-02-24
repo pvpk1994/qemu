@@ -1,0 +1,32 @@
+config CORE3
+    bool
+    imply PCI_DEVICES
+    imply TEST_DEVICES
+    imply E1000_PCI
+    select PCI_EXPRESS
+    select SUN4V_RTC
+    select SMBIOS
+    select VIRTIO_MMIO
+    select SERIAL
+    select VIRTIO_VGA
+    select ISA_BUS
+    select PCKBD
+    select MSI_NONBROKEN
+
+config CORE4
+    bool
+    imply PCI_DEVICES
+    imply TEST_DEVICES
+    imply E1000_PCI
+    select PCI_EXPRESS
+    select SUN4V_RTC
+    select SMBIOS
+    select VIRTIO_MMIO
+    select SERIAL
+    select VIRTIO_VGA
+    select ISA_BUS
+    select PCKBD
+    select MSI_NONBROKEN
+    select ACPI_NVDIMM
+    select GPIO_SUNWAY
+    select ACPI_HW_REDUCED

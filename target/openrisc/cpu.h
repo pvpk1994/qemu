@@ -73,7 +73,7 @@ enum {
     UPR_PMP = (1 << 8),
     UPR_PICP = (1 << 9),
     UPR_TTP = (1 << 10),
-    UPR_CUP = (255 << 24),
+    UPR_CUP = ((uint32_t)255 << 24),
 };
 
 /* CPU configure register */
@@ -185,15 +185,15 @@ enum {
     TTMR_TP = (0xfffffff),
     TTMR_IP = (1 << 28),
     TTMR_IE = (1 << 29),
-    TTMR_M  = (3 << 30),
+    TTMR_M  = ((uint32_t)3 << 30),
 };
 
 /* Timer Mode */
 enum {
     TIMER_NONE = (0 << 30),
     TIMER_INTR = (1 << 30),
-    TIMER_SHOT = (2 << 30),
-    TIMER_CONT = (3 << 30),
+    TIMER_SHOT = ((uint32_t)2 << 30),
+    TIMER_CONT = ((uint32_t)3 << 30),
 };
 
 /* TLB size */
