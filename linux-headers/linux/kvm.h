@@ -2060,6 +2060,11 @@ struct kvm_csv_command_batch {
 	__u64 csv_batch_list_uaddr;
 };
 
+struct kvm_csv_init {
+	__u64 userid_addr;
+	__u32 len;
+};
+
 /* CSV3 command */
 enum csv3_cmd_id {
 	KVM_CSV3_NR_MIN = 0xc0,

@@ -19,6 +19,9 @@
 #include "qemu/queue.h"
 #include "sev.h"
 
+#define GUEST_POLICY_CSV3_BIT     (1 << 6)
+#define GUEST_POLICY_REUSE_ASID  (1 << 7)
+
 #ifdef CONFIG_CSV
 
 #include "cpu.h"
@@ -73,8 +76,6 @@ int csv_save_outgoing_cpu_state(QEMUFile *f, uint64_t *bytes_sent);
 int csv_load_incoming_cpu_state(QEMUFile *f);
 
 /* CSV3 */
-#define GUEST_POLICY_CSV3_BIT     (1 << 6)
-
 struct dma_map_region {
     uint64_t start, size;
     QTAILQ_ENTRY(dma_map_region) list;
