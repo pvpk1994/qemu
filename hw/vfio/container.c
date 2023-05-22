@@ -30,6 +30,7 @@
 #include "qemu/error-report.h"
 #include "qemu/range.h"
 #include "sysemu/reset.h"
+#include "sysemu/kvm.h"
 #include "trace.h"
 #include "qapi/error.h"
 #include "migration/migration.h"
@@ -468,6 +469,32 @@ static void vfio_free_container(VFIOContainer *container)
     g_free(container);
 }
 
+static SharedRegionListener *g_shl;
+
+static void shared_memory_listener_register(MemoryListener *listener,
+                                            AddressSpace *as)
+{
+    SharedRegionListener *shl;
+
+    shl = g_new0(SharedRegionListener, 1);
+
+    shl->listener = listener;
+    shl->as = as;
+
+    shared_region_register_listener(shl);
+    g_shl = shl;
+}
+
+static void shared_memory_listener_unregister(void)
+{
+    SharedRegionListener *shl = g_shl;
+
+    shared_region_unregister_listener(shl);
+
+    g_free(shl);
+    g_shl = NULL;
+}
+
 static int vfio_connect_container(VFIOGroup *group, AddressSpace *as,
                                   Error **errp)
 {
@@ -613,7 +640,12 @@ static int vfio_connect_container(VFIOGroup *group, AddressSpace *as,
 
     container->listener = vfio_memory_listener;
 
-    memory_listener_register(&container->listener, container->space->as);
+    if (kvm_csv3_enabled()) {
+        shared_memory_listener_register(&container->listener,
+                                        container->space->as);
+    } else {
+        memory_listener_register(&container->listener, container->space->as);
+    }
 
     if (container->error) {
         ret = -1;
@@ -629,7 +661,11 @@ listener_release_exit:
     QLIST_REMOVE(group, container_next);
     QLIST_REMOVE(container, next);
     vfio_kvm_device_del_group(group);
-    memory_listener_unregister(&container->listener);
+    if (kvm_csv3_enabled()) {
+        shared_memory_listener_unregister();
+    } else {
+        memory_listener_unregister(&container->listener);
+    }
     if (container->iommu_type == VFIO_SPAPR_TCE_v2_IOMMU ||
         container->iommu_type == VFIO_SPAPR_TCE_IOMMU) {
         vfio_spapr_container_deinit(container);
@@ -663,7 +699,11 @@ static void vfio_disconnect_container(VFIOGroup *group)
      * group.
      */
     if (QLIST_EMPTY(&container->group_list)) {
-        memory_listener_unregister(&container->listener);
+        if (kvm_csv3_enabled()) {
+            shared_memory_listener_unregister();
+        } else {
+            memory_listener_unregister(&container->listener);
+        }
         if (container->iommu_type == VFIO_SPAPR_TCE_v2_IOMMU ||
             container->iommu_type == VFIO_SPAPR_TCE_IOMMU) {
             vfio_spapr_container_deinit(container);
