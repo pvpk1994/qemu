@@ -42,6 +42,7 @@ extern bool kvm_gsi_routing_allowed;
 extern bool kvm_gsi_direct_mapping;
 extern bool kvm_readonly_mem_allowed;
 extern bool kvm_msi_use_devid;
+extern bool kvm_csv3_allowed;
 
 #define kvm_enabled()           (kvm_allowed)
 /**
@@ -143,6 +144,12 @@ extern bool kvm_msi_use_devid;
  */
 #define kvm_msi_devid_required() (kvm_msi_use_devid)
 
+/**
+ * kvm_csv3_enabled:
+ * Returns: true if CSV3 feature is used for the VM.
+ */
+#define kvm_csv3_enabled() (kvm_csv3_allowed)
+
 #else
 
 #define kvm_enabled()           (0)
@@ -157,6 +164,7 @@ extern bool kvm_msi_use_devid;
 #define kvm_gsi_direct_mapping() (false)
 #define kvm_readonly_mem_enabled() (false)
 #define kvm_msi_devid_required() (false)
+#define kvm_csv3_enabled() (false)
 
 #endif  /* CONFIG_KVM_IS_POSSIBLE */
 
