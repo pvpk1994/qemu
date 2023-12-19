@@ -469,15 +469,6 @@ static inline void tmm_add_ram_region(hwaddr base1, hwaddr len1, hwaddr base2,
 #endif
 
 /**
- * kvm_arm_handle_debug:
- * @cs: CPUState
- * @debug_exit: debug part of the KVM exit structure
- *
- * Returns: TRUE if the debug exception was handled.
- */
-bool kvm_arm_handle_debug(CPUState *cs, struct kvm_debug_exit_arch *debug_exit);
-
-/**
  * kvm_arm_hw_debug_active:
  * @cs: CPU State
  *
