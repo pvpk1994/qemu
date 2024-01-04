@@ -1384,10 +1384,9 @@ static int ram_save_page(RAMState *rs, PageSearchStatus *pss)
     return pages;
 }
 
-static int ram_save_multifd_page(QEMUFile *file, RAMBlock *block,
-                                 ram_addr_t offset)
+static int ram_save_multifd_page(RAMBlock *block, ram_addr_t offset)
 {
-    if (multifd_queue_page(file, block, offset) < 0) {
+    if (multifd_queue_page(block, offset) < 0) {
         return -1;
     }
     stat64_add(&mig_stats.normal_pages, 1);
@@ -1470,7 +1469,7 @@ static int find_dirty_block(RAMState *rs, PageSearchStatus *pss)
             if (migrate_multifd() &&
                 !migrate_multifd_flush_after_each_section()) {
                 QEMUFile *f = rs->pss[RAM_CHANNEL_PRECOPY].pss_channel;
-                int ret = multifd_send_sync_main(f);
+                int ret = multifd_send_sync_main();
                 if (ret < 0) {
                     return ret;
                 }
@@ -2262,7 +2261,7 @@ static int ram_save_target_page_legacy(RAMState *rs, PageSearchStatus *pss)
      * still see partially copied pages which is data corruption.
      */
     if (migrate_multifd() && !migration_in_postcopy()) {
-        return ram_save_multifd_page(pss->pss_channel, block, offset);
+        return ram_save_multifd_page(block, offset);
     }
 
     return ram_save_page(rs, pss);
@@ -3404,7 +3403,7 @@ static int ram_save_setup(QEMUFile *f, void *opaque)
     migration_ops->ram_save_target_page = ram_save_target_page_legacy;
 
     qemu_mutex_unlock_iothread();
-    ret = multifd_send_sync_main(f);
+    ret = multifd_send_sync_main();
     qemu_mutex_lock_iothread();
     if (ret < 0) {
         return ret;
@@ -3528,7 +3527,7 @@ out:
     if (ret >= 0
         && migration_is_setup_or_active(migrate_get_current()->state)) {
         if (migrate_multifd() && migrate_multifd_flush_after_each_section()) {
-            ret = multifd_send_sync_main(rs->pss[RAM_CHANNEL_PRECOPY].pss_channel);
+            ret = multifd_send_sync_main();
             if (ret < 0) {
                 return ret;
             }
@@ -3624,7 +3623,7 @@ static int ram_save_complete(QEMUFile *f, void *opaque)
         }
     }
 
-    ret = multifd_send_sync_main(rs->pss[RAM_CHANNEL_PRECOPY].pss_channel);
+    ret = multifd_send_sync_main();
     if (ret < 0) {
         return ret;
     }
