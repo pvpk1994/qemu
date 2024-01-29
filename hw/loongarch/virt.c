@@ -1548,7 +1548,7 @@ static void virt_cpu_plug(HotplugHandler *hotplug_dev,
     }
 
     cpu_slot = virt_find_cpu_slot(MACHINE(lvms), cpu->phy_id, NULL);
-    cpu_slot->cpu = OBJECT(dev);
+    cpu_slot->cpu = CPU(dev);
     return;
 }
 

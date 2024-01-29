@@ -200,7 +200,7 @@ static void sw64_cpu_plug(HotplugHandler *hotplug_dev, DeviceState *dev,
         error_setg(&local_err, "error: No slot found for new hot add cpu!");
         return;
     }
-    found_cpu->cpu = OBJECT(dev);
+    found_cpu->cpu = CPU(dev);
 out:
     error_propagate(errp, local_err);
 }
