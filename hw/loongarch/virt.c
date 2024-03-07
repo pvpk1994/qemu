@@ -937,29 +937,33 @@ static void virt_irq_init(LoongArchVirtMachineState *lvms)
         for (i = 0; i < num; i++) {
             qdev_connect_gpio_out(DEVICE(d), i, qdev_get_gpio_in(extioi, i));
         }
-
-        pch_msi = qdev_new(TYPE_LOONGARCH_PCH_MSI);
-        start   =  num;
-        num = EXTIOI_IRQS - start;
-        qdev_prop_set_uint32(pch_msi, "msi_irq_base", start);
-        qdev_prop_set_uint32(pch_msi, "msi_irq_num", num);
-        d = SYS_BUS_DEVICE(pch_msi);
-        sysbus_realize_and_unref(d, &error_fatal);
-        sysbus_mmio_map(d, 0, VIRT_PCH_MSI_ADDR_LOW);
-        for (i = 0; i < num; i++) {
-            /* Connect pch_msi irqs to extioi */
-            qdev_connect_gpio_out(DEVICE(d), i,
-                                  qdev_get_gpio_in(extioi, i + start));
-        }
     }
 
     /* Add PCH PIC node */
     fdt_add_pch_pic_node(lvms, &eiointc_phandle, &pch_pic_phandle);
 
+    pch_msi = qdev_new(TYPE_LOONGARCH_PCH_MSI);
+    num = VIRT_PCH_PIC_IRQ_NUM;
+    start   =  num;
+    num = EXTIOI_IRQS - start;
+    qdev_prop_set_uint32(pch_msi, "msi_irq_base", start);
+    qdev_prop_set_uint32(pch_msi, "msi_irq_num", num);
+    d = SYS_BUS_DEVICE(pch_msi);
+    sysbus_realize_and_unref(d, &error_fatal);
+    sysbus_mmio_map(d, 0, VIRT_PCH_MSI_ADDR_LOW);
+    if (!(kvm_enabled() && kvm_irqchip_in_kernel())) {
+        /* Connect pch_msi irqs to extioi */
+        for (i = 0; i < num; i++) {
+            qdev_connect_gpio_out(DEVICE(d), i,
+                                  qdev_get_gpio_in(extioi, i + start));
+        }
+    }
+
     /* Add PCH MSI node */
     fdt_add_pch_msi_node(lvms, &eiointc_phandle, &pch_msi_phandle);
 
     virt_devices_init(pch_pic, lvms, &pch_pic_phandle, &pch_msi_phandle);
+
 }
 
 static void virt_firmware_init(LoongArchVirtMachineState *lvms)
