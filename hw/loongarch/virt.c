@@ -49,6 +49,7 @@
 #include "hw/virtio/virtio-iommu.h"
 #include "qemu/error-report.h"
 #include "qemu/guest-random.h"
+#include "sysemu/kvm.h"
 
 static bool virt_is_veiointc_enabled(LoongArchVirtMachineState *lvms)
 {
@@ -849,16 +850,21 @@ static void virt_irq_init(LoongArchVirtMachineState *lvms)
      *    +--------+ +---------+ +---------+
      */
 
-    /* Create IPI device */
-    ipi = qdev_new(TYPE_LOONGARCH_IPI);
-    qdev_prop_set_uint32(ipi, "num-cpu", ms->smp.max_cpus);
-    sysbus_realize_and_unref(SYS_BUS_DEVICE(ipi), &error_fatal);
+    if (kvm_enabled() && kvm_irqchip_in_kernel()) {
+        ipi = qdev_new(TYPE_KVM_LOONGARCH_IPI);
+        qdev_prop_set_int32(ipi, "num-cpu", ms->smp.max_cpus);
+        sysbus_realize_and_unref(SYS_BUS_DEVICE(ipi), &error_fatal);
+    } else {
+        ipi = qdev_new(TYPE_LOONGARCH_IPI);
+        qdev_prop_set_uint32(ipi, "num-cpu", ms->smp.max_cpus);
+        sysbus_realize_and_unref(SYS_BUS_DEVICE(ipi), &error_fatal);
 
-    /* IPI iocsr memory region */
-    memory_region_add_subregion(&lvms->system_iocsr, SMP_IPI_MAILBOX,
-                   sysbus_mmio_get_region(SYS_BUS_DEVICE(ipi), 0));
-    memory_region_add_subregion(&lvms->system_iocsr, MAIL_SEND_ADDR,
-                   sysbus_mmio_get_region(SYS_BUS_DEVICE(ipi), 1));
+        /* IPI iocsr memory region */
+        memory_region_add_subregion(&lvms->system_iocsr, SMP_IPI_MAILBOX,
+                       sysbus_mmio_get_region(SYS_BUS_DEVICE(ipi), 0));
+        memory_region_add_subregion(&lvms->system_iocsr, MAIL_SEND_ADDR,
+                       sysbus_mmio_get_region(SYS_BUS_DEVICE(ipi), 1));
+    }
 
     /* Add cpu interrupt-controller */
     fdt_add_cpuic_node(lvms, &cpuintc_phandle);
@@ -869,10 +875,6 @@ static void virt_irq_init(LoongArchVirtMachineState *lvms)
         lacpu = LOONGARCH_CPU(cpu_state);
         env = &(lacpu->env);
         env->address_space_iocsr = &lvms->as_iocsr;
-
-        /* connect ipi irq to cpu irq */
-        qdev_connect_gpio_out(ipi, cpu, qdev_get_gpio_in(cpudev, IRQ_IPI));
-        env->ipistate = ipi;
     }
 
     lvms->ipi = ipi;
@@ -1495,15 +1497,18 @@ static void virt_cpu_plug(HotplugHandler *hotplug_dev,
         env = &(cpu->env);
         env->address_space_iocsr = &lvms->as_iocsr;
 
-        /* connect ipi irq to cpu irq, logic cpu index used here */
-        qdev_connect_gpio_out(lvms->ipi, cs->cpu_index,
-                              qdev_get_gpio_in(dev, IRQ_IPI));
-        env->ipistate = lvms->ipi;
 
-        for (pin = 0; pin < LS3A_INTC_IP; pin++) {
-            qdev_connect_gpio_out(lvms->extioi, (cs->cpu_index * 8 + pin),
-                                  qdev_get_gpio_in(dev, pin + 2));
-        }
+        env->ipistate = lvms->ipi;
+        if (!(kvm_enabled() && kvm_irqchip_in_kernel())) {
+            /* connect ipi irq to cpu irq, logic cpu index used here */
+            qdev_connect_gpio_out(lvms->ipi, cs->cpu_index,
+                                  qdev_get_gpio_in(dev, IRQ_IPI));
+
+            for (pin = 0; pin < LS3A_INTC_IP; pin++) {
+                qdev_connect_gpio_out(lvms->extioi, (cs->cpu_index * 8 + pin),
+                                      qdev_get_gpio_in(dev, pin + 2));
+            }
+	}
         hhc = HOTPLUG_HANDLER_GET_CLASS(lvms->acpi_ged);
         hhc->plug(HOTPLUG_HANDLER(lvms->acpi_ged), dev, &local_err);
         if (local_err) {
