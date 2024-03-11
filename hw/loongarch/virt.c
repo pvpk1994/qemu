@@ -15,6 +15,7 @@
 #include "sysemu/runstate.h"
 #include "sysemu/reset.h"
 #include "sysemu/rtc.h"
+#include "sysemu/kvm.h"
 #include "hw/loongarch/virt.h"
 #include "exec/address-spaces.h"
 #include "hw/irq.h"
@@ -618,9 +619,18 @@ static void loongarch_irq_init(LoongArchMachineState *lams)
     /* Create EXTIOI device */
     extioi = qdev_new(TYPE_LOONGARCH_EXTIOI);
     qdev_prop_set_uint32(extioi, "num-cpu", ms->smp.cpus);
+    if (lams->v_eiointc) {
+        qdev_prop_set_bit(extioi, "has-virtualization-extension", true);
+    }
     sysbus_realize_and_unref(SYS_BUS_DEVICE(extioi), &error_fatal);
+
     memory_region_add_subregion(&lams->system_iocsr, APIC_BASE,
                    sysbus_mmio_get_region(SYS_BUS_DEVICE(extioi), 0));
+    if (lams->v_eiointc) {
+        memory_region_add_subregion(&lams->system_iocsr, EXTIOI_VIRT_BASE,
+                   sysbus_mmio_get_region(SYS_BUS_DEVICE(extioi), 1));
+    }
+    lams->extioi = extioi;
 
     /*
      * connect ext irq to the cpu irq
@@ -780,32 +790,87 @@ static void loongarch_direct_kernel_boot(LoongArchMachineState *lams,
     }
 }
 
-static void loongarch_qemu_write(void *opaque, hwaddr addr,
-                                 uint64_t val, unsigned size)
+static MemTxResult loongarch_qemu_write(void *opaque, hwaddr addr, uint64_t val,
+                                        unsigned size, MemTxAttrs attrs)
 {
+    LoongArchMachineState *lams = LOONGARCH_MACHINE(opaque);
+    uint64_t features;
+
+    switch (addr) {
+    case MISC_FUNC_REG:
+        if (!lams->v_eiointc) {
+            return MEMTX_OK;
+        }
+
+        features = address_space_ldl(&lams->as_iocsr,
+                                     EXTIOI_VIRT_BASE + EXTIOI_VIRT_CONFIG,
+                                     attrs, NULL);
+        if (val & BIT_ULL(IOCSRM_EXTIOI_EN)) {
+            features |= BIT(EXTIOI_ENABLE);
+        }
+        if (val & BIT_ULL(IOCSRM_EXTIOI_INT_ENCODE)) {
+            features |= BIT(EXTIOI_ENABLE_INT_ENCODE);
+        }
+
+        address_space_stl(&lams->as_iocsr,
+                          EXTIOI_VIRT_BASE + EXTIOI_VIRT_CONFIG,
+                          features, attrs, NULL);
+    }
+
+    return MEMTX_OK;
 }
 
-static uint64_t loongarch_qemu_read(void *opaque, hwaddr addr, unsigned size)
+static MemTxResult loongarch_qemu_read(void *opaque, hwaddr addr,
+                                       uint64_t *data,
+                                       unsigned size, MemTxAttrs attrs)
 {
+    LoongArchMachineState *lams = LOONGARCH_MACHINE(opaque);
+    uint64_t ret = 0;
+    int features;
+
     switch (addr) {
     case VERSION_REG:
-        return 0x11ULL;
+        ret = 0x11ULL;
+        break;
     case FEATURE_REG:
-        return 1ULL << IOCSRF_MSI | 1ULL << IOCSRF_EXTIOI |
-               1ULL << IOCSRF_CSRIPI;
+        ret = 1ULL << IOCSRF_MSI | 1ULL << IOCSRF_EXTIOI |
+              1ULL << IOCSRF_CSRIPI;
+        if (kvm_enabled()) {
+            ret |= 1ULL << IOCSRF_VM;
+        }
+        break;
     case VENDOR_REG:
-        return 0x6e6f73676e6f6f4cULL; /* "Loongson" */
+        ret = 0x6e6f73676e6f6f4cULL; /* "Loongson" */
+        break;
     case CPUNAME_REG:
-        return 0x303030354133ULL;     /* "3A5000" */
+        ret = 0x303030354133ULL;     /* "3A5000" */
+        break;
     case MISC_FUNC_REG:
-        return 1ULL << IOCSRM_EXTIOI_EN;
+        if (!lams->v_eiointc) {
+            ret |= BIT_ULL(IOCSRM_EXTIOI_EN);
+            break;
+        }
+
+        features = address_space_ldl(&lams->as_iocsr,
+                                     EXTIOI_VIRT_BASE + EXTIOI_VIRT_CONFIG,
+                                     attrs, NULL);
+        if (features & BIT(EXTIOI_ENABLE)) {
+            ret |= BIT_ULL(IOCSRM_EXTIOI_EN);
+        }
+
+        if (features & BIT(EXTIOI_ENABLE_INT_ENCODE)) {
+            ret |= BIT_ULL(IOCSRM_EXTIOI_INT_ENCODE);
+        }
+        break;
     }
-    return 0ULL;
+
+    *data = ret;
+    return MEMTX_OK;
 }
 
 static const MemoryRegionOps loongarch_qemu_ops = {
-    .read = loongarch_qemu_read,
-    .write = loongarch_qemu_write,
+    .read_with_attrs  = loongarch_qemu_read,
+    .write_with_attrs = loongarch_qemu_write,
     .endianness = DEVICE_LITTLE_ENDIAN,
     .valid = {
         .min_access_size = 4,
@@ -1010,6 +1075,11 @@ static void loongarch_machine_initfn(Object *obj)
 {
     LoongArchMachineState *lams = LOONGARCH_MACHINE(obj);
 
+    if (kvm_enabled()) {
+        lams->v_eiointc = true;
+    } else {
+        lams->v_eiointc = false;
+    }
     lams->acpi = ON_OFF_AUTO_AUTO;
     lams->oem_id = g_strndup(ACPI_BUILD_APPNAME6, 6);
     lams->oem_table_id = g_strndup(ACPI_BUILD_APPNAME8, 8);
@@ -1163,6 +1233,20 @@ static int64_t virt_get_default_cpu_node_id(const MachineState *ms, int idx)
     return nidx;
 }
 
+static bool virt_get_v_eiointc(Object *obj, Error **errp)
+{
+    LoongArchMachineState *lams = LOONGARCH_MACHINE(obj);
+
+    return lams->v_eiointc;
+}
+
+static void virt_set_v_eiointc(Object *obj, bool value, Error **errp)
+{
+    LoongArchMachineState *lams = LOONGARCH_MACHINE(obj);
+
+    lams->v_eiointc = value;
+}
+
 static void loongarch_class_init(ObjectClass *oc, void *data)
 {
     MachineClass *mc = MACHINE_CLASS(oc);
@@ -1201,6 +1285,12 @@ static void loongarch_class_init(ObjectClass *oc, void *data)
 #ifdef CONFIG_TPM
     machine_class_allow_dynamic_sysbus_dev(mc, TYPE_TPM_TIS_SYSBUS);
 #endif
+
+    object_class_property_add_bool(oc, "v-eiointc", virt_get_v_eiointc,
+                               virt_set_v_eiointc);
+    object_class_property_set_description(oc, "v-eiointc",
+                            "Set on/off to enable/disable The virt"
+                            "LoongArch Extend I/O Interrupt Controller. ");
 }
 
 static const TypeInfo loongarch_machine_types[] = {
