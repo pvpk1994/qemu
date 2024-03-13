@@ -55,11 +55,6 @@ static void extioi_update_irq(LoongArchExtIOI *s, int irq, int level)
 static void extioi_setirq(void *opaque, int irq, int level)
 {
     LoongArchExtIOI *s = LOONGARCH_EXTIOI(opaque);
-
-    if (s->status & BIT(EXTIOI_ENABLE)) {
-        return;
-    }
-
     trace_loongarch_extioi_setirq(irq, level);
     if (level) {
         /*
@@ -148,18 +143,17 @@ static inline void extioi_update_sw_coremap(LoongArchExtIOI *s, int irq,
 
     for (i = 0; i < 4; i++) {
         cpu = val & 0xff;
-        val = val >> 8;
-
-        if (!(s->status & BIT(EXTIOI_ENABLE_CPU_ENCODE))) {
+	if (!(s->status & BIT(EXTIOI_ENABLE_CPU_ENCODE))) {
             cpu = ctz32(cpu);
             cpu = (cpu >= 4) ? 0 : cpu;
         }
+        val = val >> 8;
 
         if (s->sw_coremap[irq + i] == cpu) {
             continue;
         }
 
-        if (notify && test_bit(irq, (unsigned long *)s->isr)) {
+        if (notify && test_bit(irq + i, (unsigned long *)s->isr)) {
             /*
              * lower irq at old cpu and raise irq at new cpu
              */
@@ -185,12 +179,8 @@ static inline void extioi_update_sw_ipmap(LoongArchExtIOI *s, int index,
     val = cpu_to_le64(val);
     for (i = 0; i < 4; i++) {
         ipnum = val & 0xff;
-        if (s->status & EXTIOI_ENABLE_INT_ENCODE) {
-            ipnum = (ipnum >= 8) ? 0 : ipnum;
-        } else {
-            ipnum = ctz32(ipnum);
-            ipnum = (ipnum >= 4) ? 0 : ipnum;
-        }
+        ipnum = ctz32(ipnum);
+        ipnum = (ipnum >= 4) ? 0 : ipnum;
         s->sw_ipmap[index * 4 + i] = ipnum;
         val = val >> 8;
     }
@@ -386,7 +376,9 @@ static void loongarch_extioi_reset(DeviceState *d)
     LoongArchExtIOI *s = LOONGARCH_EXTIOI(d);
 
     /* use legacy interrupt routing method by default */
-    s->status = 0;
+    if (s->features & BIT(EXTIOI_HAS_VIRT_EXTENSION)) {
+        s->status = 0;
+    }
 }
 
 static int vmstate_extioi_post_load(void *opaque, int version_id)

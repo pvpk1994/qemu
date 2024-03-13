@@ -40,12 +40,12 @@ struct LoongArchMachineState {
     MemoryRegion highmem;
     MemoryRegion bios;
     bool         bios_loaded;
-    bool         v_eiointc;
     /* State for other subsystems/APIs: */
     FWCfgState  *fw_cfg;
     Notifier     machine_done;
     Notifier     powerdown_notifier;
     OnOffAuto    acpi;
+    OnOffAuto    veiointc;
     char         *oem_id;
     char         *oem_table_id;
     DeviceState  *acpi_ged;

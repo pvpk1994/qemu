@@ -15,6 +15,7 @@
 #include "sysemu/runstate.h"
 #include "sysemu/reset.h"
 #include "sysemu/rtc.h"
+#include "sysemu/tcg.h"
 #include "sysemu/kvm.h"
 #include "hw/loongarch/virt.h"
 #include "exec/address-spaces.h"
@@ -54,6 +55,31 @@ struct loaderparams {
     const char *kernel_cmdline;
     const char *initrd_filename;
 };
+
+static bool virt_is_veiointc_enabled(LoongArchMachineState *lams)
+{
+    if (lams->veiointc == ON_OFF_AUTO_OFF) {
+        return false;
+    }
+    return true;
+}
+
+static void virt_get_veiointc(Object *obj, Visitor *v, const char *name,
+                               void *opaque, Error **errp)
+{
+    LoongArchMachineState *lams = LOONGARCH_MACHINE(obj);
+    OnOffAuto veiointc = lams->veiointc;
+
+    visit_type_OnOffAuto(v, name, &veiointc, errp);
+}
+
+static void virt_set_veiointc(Object *obj, Visitor *v, const char *name,
+                               void *opaque, Error **errp)
+{
+    LoongArchMachineState *lams = LOONGARCH_MACHINE(obj);
+
+    visit_type_OnOffAuto(v, name, &lams->veiointc, errp);
+}
 
 static PFlashCFI01 *virt_flash_create1(LoongArchMachineState *lams,
                                        const char *name,
@@ -619,14 +645,14 @@ static void loongarch_irq_init(LoongArchMachineState *lams)
     /* Create EXTIOI device */
     extioi = qdev_new(TYPE_LOONGARCH_EXTIOI);
     qdev_prop_set_uint32(extioi, "num-cpu", ms->smp.cpus);
-    if (lams->v_eiointc) {
+    if (virt_is_veiointc_enabled(lams)) {
         qdev_prop_set_bit(extioi, "has-virtualization-extension", true);
     }
     sysbus_realize_and_unref(SYS_BUS_DEVICE(extioi), &error_fatal);
 
     memory_region_add_subregion(&lams->system_iocsr, APIC_BASE,
                    sysbus_mmio_get_region(SYS_BUS_DEVICE(extioi), 0));
-    if (lams->v_eiointc) {
+    if (virt_is_veiointc_enabled(lams)) {
         memory_region_add_subregion(&lams->system_iocsr, EXTIOI_VIRT_BASE,
                    sysbus_mmio_get_region(SYS_BUS_DEVICE(extioi), 1));
     }
@@ -798,7 +824,7 @@ static MemTxResult loongarch_qemu_write(void *opaque, hwaddr addr, uint64_t val,
 
     switch (addr) {
     case MISC_FUNC_REG:
-        if (!lams->v_eiointc) {
+        if (!virt_is_veiointc_enabled(lams)) {
             return MEMTX_OK;
         }
 
@@ -846,7 +872,7 @@ static MemTxResult loongarch_qemu_read(void *opaque, hwaddr addr,
         ret = 0x303030354133ULL;     /* "3A5000" */
         break;
     case MISC_FUNC_REG:
-        if (!lams->v_eiointc) {
+        if (!virt_is_veiointc_enabled(lams)) {
             ret |= BIT_ULL(IOCSRM_EXTIOI_EN);
             break;
         }
@@ -1075,10 +1101,8 @@ static void loongarch_machine_initfn(Object *obj)
 {
     LoongArchMachineState *lams = LOONGARCH_MACHINE(obj);
 
-    if (kvm_enabled()) {
-        lams->v_eiointc = true;
-    } else {
-        lams->v_eiointc = false;
+    if (tcg_enabled()) {
+        lams->veiointc = ON_OFF_AUTO_OFF;
     }
     lams->acpi = ON_OFF_AUTO_AUTO;
     lams->oem_id = g_strndup(ACPI_BUILD_APPNAME6, 6);
@@ -1233,20 +1257,6 @@ static int64_t virt_get_default_cpu_node_id(const MachineState *ms, int idx)
     return nidx;
 }
 
-static bool virt_get_v_eiointc(Object *obj, Error **errp)
-{
-    LoongArchMachineState *lams = LOONGARCH_MACHINE(obj);
-
-    return lams->v_eiointc;
-}
-
-static void virt_set_v_eiointc(Object *obj, bool value, Error **errp)
-{
-    LoongArchMachineState *lams = LOONGARCH_MACHINE(obj);
-
-    lams->v_eiointc = value;
-}
-
 static void loongarch_class_init(ObjectClass *oc, void *data)
 {
     MachineClass *mc = MACHINE_CLASS(oc);
@@ -1281,16 +1291,14 @@ static void loongarch_class_init(ObjectClass *oc, void *data)
         NULL, NULL);
     object_class_property_set_description(oc, "acpi",
         "Enable ACPI");
+    object_class_property_add(oc, "v-eiointc", "OnOffAuto",
+        virt_get_veiointc, virt_set_veiointc, NULL, NULL);
+    object_class_property_set_description(oc, "v-eiointc",
+                            "Enable Virt Extend I/O Interrupt Controller");
     machine_class_allow_dynamic_sysbus_dev(mc, TYPE_RAMFB_DEVICE);
 #ifdef CONFIG_TPM
     machine_class_allow_dynamic_sysbus_dev(mc, TYPE_TPM_TIS_SYSBUS);
 #endif
-
-    object_class_property_add_bool(oc, "v-eiointc", virt_get_v_eiointc,
-                               virt_set_v_eiointc);
-    object_class_property_set_description(oc, "v-eiointc",
-                            "Set on/off to enable/disable The virt"
-                            "LoongArch Extend I/O Interrupt Controller. ");
 }
 
 static const TypeInfo loongarch_machine_types[] = {

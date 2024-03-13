@@ -36,7 +36,7 @@
 #define EXTIOI_ISR_START             (0x700 - APIC_OFFSET)
 #define EXTIOI_ISR_END               (0x720 - APIC_OFFSET)
 #define EXTIOI_COREISR_START         (0x800 - APIC_OFFSET)
-#define EXTIOI_COREISR_END           (0x820 - APIC_OFFSET)
+#define EXTIOI_COREISR_END           (0xB20 - APIC_OFFSET)
 #define EXTIOI_COREMAP_START         (0xC00 - APIC_OFFSET)
 #define EXTIOI_COREMAP_END           (0xD00 - APIC_OFFSET)
 
@@ -48,6 +48,7 @@
 #define  EXTIOI_HAS_INT_ENCODE         (2)
 #define  EXTIOI_HAS_CPU_ENCODE         (3)
 #define  EXTIOI_VIRT_HAS_FEATURES      (BIT(EXTIOI_HAS_VIRT_EXTENSION) \
+                                        | BIT(EXTIOI_HAS_ENABLE_OPTION)\
                                         | BIT(EXTIOI_HAS_INT_ENCODE)   \
                                         | BIT(EXTIOI_HAS_CPU_ENCODE))
 #define EXTIOI_VIRT_CONFIG           (0x4)
