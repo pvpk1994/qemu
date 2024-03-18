@@ -589,6 +589,8 @@ uint32_t kvm_dirty_ring_size(void);
 
 int kvm_load_user_data(hwaddr loader_start, hwaddr image_end, hwaddr initrd_start, hwaddr dtb_end, hwaddr ram_size,
                        struct kvm_numa_info *numa_info);
+void kvm_mark_guest_state_protected(void);
+
 
 /**
  * kvm_hwpoisoned_mem - indicate if there is any hwpoisoned page
