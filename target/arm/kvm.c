@@ -1201,11 +1201,6 @@ int kvm_arch_msi_data_to_gsi(uint32_t data)
     return (data - 32) & 0xffff;
 }
 
-bool kvm_arch_cpu_check_are_resettable(void)
-{
-    return !virtcca_cvm_enabled();
-}
-
 static void kvm_arch_get_eager_split_size(Object *obj, Visitor *v,
                                           const char *name, void *opaque,
                                           Error **errp)
