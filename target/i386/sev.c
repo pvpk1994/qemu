@@ -78,6 +78,7 @@ struct SevGuestState {
     char *user_id;
     char *secret_header_file;
     char *secret_file;
+    bool legacy_vm_type;
 
     /* runtime state */
     uint32_t handle;
@@ -455,6 +456,16 @@ static void sev_guest_set_kernel_hashes(Object *obj, bool value, Error **errp)
     SevGuestState *sev = SEV_GUEST(obj);
 
     sev->kernel_hashes = value;
+}
+
+static bool sev_guest_get_legacy_vm_type(Object *obj, Error **errp)
+{
+    return SEV_GUEST(obj)->legacy_vm_type;
+}
+
+static void sev_guest_set_legacy_vm_type(Object *obj, bool value, Error **errp)
+{
+    SEV_GUEST(obj)->legacy_vm_type = value;
 }
 
 bool
@@ -1105,7 +1116,7 @@ static int sev_kvm_type(X86ConfidentialGuest *cg)
     }
 
     kvm_type = (sev->policy & SEV_POLICY_ES) ? KVM_X86_SEV_ES_VM : KVM_X86_SEV_VM;
-    if (kvm_is_vm_type_supported(kvm_type)) {
+    if (kvm_is_vm_type_supported(kvm_type) && !sev->legacy_vm_type) {
         sev->kvm_type = kvm_type;
     } else {
         sev->kvm_type = KVM_X86_DEFAULT_VM;
@@ -2798,6 +2809,11 @@ sev_guest_class_init(ObjectClass *oc, void *data)
                    sev_guest_set_secret_file);
     object_class_property_set_description(oc, "secret-file",
        "file of the guest owner's secret");
+    object_class_property_add_bool(oc, "legacy-vm-type",
+                                   sev_guest_get_legacy_vm_type,
+                                   sev_guest_set_legacy_vm_type);
+    object_class_property_set_description(oc, "legacy-vm-type",
+            "use legacy VM type to maintain measurement compatibility with older QEMU or kernel versions.");
 }
 
 static void
