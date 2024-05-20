@@ -39,3 +39,8 @@ void csv3_shared_region_dma_unmap(uint64_t start, uint64_t end)
 {
 
 }
+
+void csv3_shared_region_relese(uint64_t gpa, uint32_t num_pages)
+{
+
+}

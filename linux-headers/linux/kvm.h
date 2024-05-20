@@ -2076,6 +2076,7 @@ enum csv3_cmd_id {
 	KVM_CSV3_SEND_ENCRYPT_CONTEXT,
 	KVM_CSV3_RECEIVE_ENCRYPT_DATA,
 	KVM_CSV3_RECEIVE_ENCRYPT_CONTEXT,
+	KVM_CSV3_HANDLE_MEMORY,
 
 	KVM_CSV3_NR_MAX,
 };
@@ -2120,6 +2121,14 @@ struct kvm_csv3_receive_encrypt_context {
 	__u32 hdr_len;
 	__u64 trans_uaddr;
 	__u32 trans_len;
+};
+
+#define KVM_CSV3_RELEASE_SHARED_MEMORY (0x0001)
+
+struct kvm_csv3_handle_memory {
+	__u64 gpa;
+	__u32 num_pages;
+	__u32 opcode;
 };
 
 #define KVM_DEV_ASSIGN_ENABLE_IOMMU	(1 << 0)
