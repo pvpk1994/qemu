@@ -503,6 +503,23 @@ static QemuOptsList qemu_action_opts = {
     },
 };
 
+static QemuOptsList qemu_mem2_opts = {
+    .name = "mem2",
+    .merge_lists = true,
+    .head = QTAILQ_HEAD_INITIALIZER(qemu_mem2_opts.head),
+    .desc = {
+        {
+            .name = "base",
+            .type = QEMU_OPT_SIZE,
+        },
+        {
+            .name = "size",
+            .type = QEMU_OPT_SIZE,
+        },
+        { /* end of list */ }
+    },
+};
+
 const char *qemu_get_vm_name(void)
 {
     return qemu_name;
@@ -2090,6 +2107,45 @@ static void parse_memory_options(void)
     loc_pop(&loc);
 }
 
+static void parse_mem2_options(void)
+{
+    uint64_t sz, base;
+    const char *sz_str = NULL, *base_str = NULL;
+    QemuOpts *opts = qemu_find_opts_singleton("mem2");
+    Location loc;
+
+    loc_push_none(&loc);
+    qemu_opts_loc_restore(opts);
+
+    base_str = qemu_opt_get(opts, "base");
+    sz_str = qemu_opt_get(opts, "size");
+
+    if (!base_str && !sz_str)
+        return;
+
+    if ((!base_str || !*base_str)
+            || (!sz_str || !*sz_str)) {
+        error_report("missing 'base' or 'size' argument for -mem2 option");
+        exit(EXIT_FAILURE);
+    }
+
+    base = qemu_opt_get_size(opts, "base", 0);
+    if (!base) {
+        error_report("invalid 'base' value\n");
+        exit(EXIT_FAILURE);
+    }
+    current_machine->ram2_base = base;
+
+    sz = qemu_opt_get_size(opts, "size", 0);
+    if (!sz) {
+        error_report("invalid 'size' value\n");
+        exit(EXIT_FAILURE);
+    }
+    current_machine->ram2_size = sz;
+
+    loc_pop(&loc);
+}
+
 static void qemu_create_machine(QDict *qdict)
 {
     MachineClass *machine_class = select_machine(qdict, &error_fatal);
@@ -2776,6 +2832,7 @@ void qemu_init(int argc, char **argv)
     qemu_add_opts(&qemu_semihosting_config_opts);
     qemu_add_opts(&qemu_fw_cfg_opts);
     qemu_add_opts(&qemu_action_opts);
+    qemu_add_opts(&qemu_mem2_opts);
     qemu_add_run_with_opts();
     module_call_init(MODULE_INIT_OPTS);
 
@@ -3635,7 +3692,13 @@ void qemu_init(int argc, char **argv)
                 break;
             }
 #endif /* CONFIG_POSIX */
-
+            case QEMU_OPTION_mem2:
+                opts = qemu_opts_parse_noisily(qemu_find_opts("mem2"),
+                                               optarg, false);
+                if (!opts) {
+                    exit(EXIT_FAILURE);
+                }
+                break;
             default:
                 error_report("Option not supported in this build");
                 exit(1);
@@ -3685,6 +3748,8 @@ void qemu_init(int argc, char **argv)
     parse_memory_options();
 
     qemu_create_machine(machine_opts_dict);
+
+    parse_mem2_options();
 
     suspend_mux_open();
 
