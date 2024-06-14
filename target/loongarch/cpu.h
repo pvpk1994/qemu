@@ -18,6 +18,7 @@
 #endif
 #include "cpu-csr.h"
 #include "cpu-qom.h"
+#include "qapi/qapi-types-common.h"
 
 #define IOCSRF_TEMP             0
 #define IOCSRF_NODECNT          1
@@ -281,6 +282,10 @@ struct LoongArchTLB {
 };
 typedef struct LoongArchTLB LoongArchTLB;
 
+enum loongarch_features {
+    LOONGARCH_FEATURE_PMU,
+};
+
 typedef struct CPUArchState {
     uint64_t gpr[32];
     uint64_t pc;
@@ -377,6 +382,7 @@ struct ArchCPU {
     CPULoongArchState env;
     QEMUTimer timer;
     uint32_t  phy_id;
+    OnOffAuto pmu;
 
     /* 'compatible' string for this CPU for Linux device trees */
     const char *dtb_compatible;
