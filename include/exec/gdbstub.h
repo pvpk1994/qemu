@@ -41,6 +41,12 @@ void gdb_register_coprocessor(CPUState *cpu,
                               int num_regs, const char *xml, int g_pos);
 
 /**
+ * gdb_unregister_coprocessor_all() - unregisters supplemental set of registers
+ * @cpu - the CPU associated with registers
+ */
+void gdb_unregister_coprocessor_all(CPUState *cpu);
+
+/**
  * gdbserver_start: start the gdb server
  * @port_or_device: connection spec for gdb
  *
