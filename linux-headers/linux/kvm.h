@@ -14,6 +14,8 @@
 #include <linux/ioctl.h>
 #include <asm/kvm.h>
 
+#include "sysemu/numa.h"
+
 #define KVM_API_VERSION 12
 
 /* *** Deprecated interfaces *** */
@@ -1203,6 +1205,8 @@ struct kvm_ppc_resize_hpt {
 
 #define KVM_EXIT_HYPERCALL_VALID_MASK (1 << KVM_HC_MAP_GPA_RANGE)
 
+#define KVM_CAP_ARM_TMM 300
+
 #ifdef KVM_CAP_IRQ_ROUTING
 
 struct kvm_irq_routing_irqchip {
@@ -1478,6 +1482,32 @@ struct kvm_vfio_spapr_tce {
 	__s32	tablefd;
 };
 
+#define MAX_NUMA_NODE 8
+#define MAX_CPU_BIT_MAP 4
+#define MAX_NODE_BIT_MAP (MAX_NODES / BITS_PER_LONG)
+
+struct kvm_numa_node {
+	__u64 numa_id;
+	__u64 ipa_start;
+	__u64 ipa_size;
+	__u64 host_numa_nodes[MAX_NODE_BIT_MAP];
+	__u64 cpu_id[MAX_CPU_BIT_MAP];
+};
+
+struct kvm_numa_info {
+	__u64 numa_cnt;
+	struct kvm_numa_node numa_nodes[MAX_NUMA_NODE];
+};
+
+struct kvm_user_data {
+	__u64 loader_start;
+	__u64 image_end;
+	__u64 initrd_start;
+	__u64 dtb_end;
+	__u64 ram_size;
+	struct kvm_numa_info numa_info;
+};
+
 /*
  * KVM_CREATE_VCPU receives as a parameter the vcpu slot, and returns
  * a vcpu fd.
@@ -1490,7 +1520,7 @@ struct kvm_vfio_spapr_tce {
 					struct kvm_userspace_memory_region)
 #define KVM_SET_TSS_ADDR          _IO(KVMIO,   0x47)
 #define KVM_SET_IDENTITY_MAP_ADDR _IOW(KVMIO,  0x48, __u64)
-
+#define KVM_LOAD_USER_DATA		  _IOW(KVMIO,  0x49, struct kvm_user_data)
 /* enable ucontrol for s390 */
 struct kvm_s390_ucas_mapping {
 	__u64 user_addr;
