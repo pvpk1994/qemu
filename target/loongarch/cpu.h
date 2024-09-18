@@ -285,6 +285,7 @@ typedef struct LoongArchTLB LoongArchTLB;
 
 enum loongarch_features {
     LOONGARCH_FEATURE_LBT, /* loongson binary translation extension */
+    LOONGARCH_FEATURE_PMU,
 };
 
 typedef struct  LoongArchBT {
