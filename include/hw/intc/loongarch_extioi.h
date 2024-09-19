@@ -39,22 +39,22 @@
 #define EXTIOI_COREISR_END           (0xB20 - APIC_OFFSET)
 #define EXTIOI_COREMAP_START         (0xC00 - APIC_OFFSET)
 #define EXTIOI_COREMAP_END           (0xD00 - APIC_OFFSET)
+#define EXTIOI_SIZE                  0x800
 
 #define EXTIOI_VIRT_BASE             (0x40000000)
 #define EXTIOI_VIRT_SIZE             (0x1000)
 #define EXTIOI_VIRT_FEATURES         (0x0)
-#define  EXTIOI_HAS_VIRT_EXTENSION     (0)
-#define  EXTIOI_HAS_ENABLE_OPTION      (1)
-#define  EXTIOI_HAS_INT_ENCODE         (2)
-#define  EXTIOI_HAS_CPU_ENCODE         (3)
-#define  EXTIOI_VIRT_HAS_FEATURES      (BIT(EXTIOI_HAS_VIRT_EXTENSION) \
-                                        | BIT(EXTIOI_HAS_ENABLE_OPTION)\
-                                        | BIT(EXTIOI_HAS_INT_ENCODE)   \
-                                        | BIT(EXTIOI_HAS_CPU_ENCODE))
+#define  EXTIOI_HAS_VIRT_EXTENSION   (0)
+#define  EXTIOI_HAS_ENABLE_OPTION    (1)
+#define  EXTIOI_HAS_INT_ENCODE       (2)
+#define  EXTIOI_HAS_CPU_ENCODE       (3)
+#define  EXTIOI_VIRT_HAS_FEATURES    (BIT(EXTIOI_HAS_VIRT_EXTENSION)  \
+                                      | BIT(EXTIOI_HAS_ENABLE_OPTION) \
+                                      | BIT(EXTIOI_HAS_CPU_ENCODE))
 #define EXTIOI_VIRT_CONFIG           (0x4)
-#define  EXTIOI_ENABLE                 (1)
-#define  EXTIOI_ENABLE_INT_ENCODE      (2)
-#define  EXTIOI_ENABLE_CPU_ENCODE      (3)
+#define  EXTIOI_ENABLE               (1)
+#define  EXTIOI_ENABLE_INT_ENCODE    (2)
+#define  EXTIOI_ENABLE_CPU_ENCODE    (3)
 #define EXTIOI_VIRT_COREMAP_START    (0x40)
 #define EXTIOI_VIRT_COREMAP_END      (0x240)
 
