@@ -587,7 +587,7 @@ static void loongarch_cpu_reset_hold(Object *obj)
     env->pc = 0x1c000000;
     memset(env->tlb, 0, sizeof(env->tlb));
     if (kvm_enabled()) {
-        kvm_arch_reset_vcpu(env);
+        kvm_arch_reset_vcpu(cs);
     }
 #endif
 
