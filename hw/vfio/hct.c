@@ -248,6 +248,7 @@ static int hct_get_ccp_index(HCTDevState *state)
         return -errno;
     }
 
+    memset(buf, 0, sizeof(buf));
     ret = read(fd, buf, sizeof(buf));
     if (ret < 0) {
         ret = -errno;
