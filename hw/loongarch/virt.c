@@ -875,6 +875,10 @@ static void virt_irq_init(LoongArchVirtMachineState *lvms)
         lacpu = LOONGARCH_CPU(cpu_state);
         env = &(lacpu->env);
         env->address_space_iocsr = &lvms->as_iocsr;
+
+        /* connect ipi irq to cpu irq */
+        qdev_connect_gpio_out(ipi, cpu, qdev_get_gpio_in(cpudev, IRQ_IPI));
+        env->ipistate = ipi;
     }
 
     lvms->ipi = ipi;
@@ -1511,7 +1515,7 @@ static void virt_cpu_plug(HotplugHandler *hotplug_dev,
         env = &(cpu->env);
         env->address_space_iocsr = &lvms->as_iocsr;
 
-
+        qemu_register_reset(reset_load_elf, LOONGARCH_CPU(qemu_get_cpu(cs->cpu_index)));
         env->ipistate = lvms->ipi;
         if (!(kvm_enabled() && kvm_irqchip_in_kernel())) {
             /* connect ipi irq to cpu irq, logic cpu index used here */
