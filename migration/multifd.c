@@ -894,6 +894,7 @@ static void *multifd_send_thread(void *opaque)
         if (qatomic_load_acquire(&p->pending_job)) {
             MultiFDPages_t *pages = p->pages;
 
+            p->flags = 0;
             p->iovs_num = 0;
             assert(pages->num);
 
@@ -940,7 +941,6 @@ static void *multifd_send_thread(void *opaque)
                 }
                 /* p->next_packet_size will always be zero for a SYNC packet */
                 stat64_add(&mig_stats.multifd_bytes, p->packet_len);
-                p->flags = 0;
             }
 
             qatomic_set(&p->pending_sync, false);
