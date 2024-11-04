@@ -864,6 +864,14 @@ static void virt_irq_init(LoongArchVirtMachineState *lvms)
                        sysbus_mmio_get_region(SYS_BUS_DEVICE(ipi), 0));
         memory_region_add_subregion(&lvms->system_iocsr, MAIL_SEND_ADDR,
                        sysbus_mmio_get_region(SYS_BUS_DEVICE(ipi), 1));
+
+        for (cpu = 0; cpu < ms->smp.cpus; cpu++) {
+            cpu_state = qemu_get_cpu(cpu);
+            cpudev = DEVICE(cpu_state);
+
+            /* connect ipi irq to cpu irq */
+            qdev_connect_gpio_out(ipi, cpu, qdev_get_gpio_in(cpudev, IRQ_IPI));
+        }
     }
 
     /* Add cpu interrupt-controller */
@@ -875,9 +883,6 @@ static void virt_irq_init(LoongArchVirtMachineState *lvms)
         lacpu = LOONGARCH_CPU(cpu_state);
         env = &(lacpu->env);
         env->address_space_iocsr = &lvms->as_iocsr;
-
-        /* connect ipi irq to cpu irq */
-        qdev_connect_gpio_out(ipi, cpu, qdev_get_gpio_in(cpudev, IRQ_IPI));
         env->ipistate = ipi;
     }
 

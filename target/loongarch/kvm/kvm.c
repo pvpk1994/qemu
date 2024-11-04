@@ -966,7 +966,6 @@ int kvm_arch_init(MachineState *ms, KVMState *s)
     if(!kvm_vm_check_attr(kvm_state, KVM_LOONGARCH_VM_HAVE_IRQCHIP, KVM_LOONGARCH_VM_HAVE_IRQCHIP)) {
         s->kernel_irqchip_allowed = false;
     }
-    s->kernel_irqchip_allowed = false;
 
     return 0;
 }
