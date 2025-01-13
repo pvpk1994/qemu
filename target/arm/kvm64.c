@@ -31,6 +31,7 @@
 #include "cpu-features.h"
 #include "hw/acpi/acpi.h"
 #include "hw/acpi/ghes.h"
+#include "qemu/aarch64-cpuid.h"
 
 static bool have_guest_debug;
 
@@ -553,6 +554,92 @@ static int kvm_arm_sve_set_vls(CPUState *cs)
 
 #define ARM_CPU_ID_MPIDR       3, 0, 0, 0, 5
 
+#define SYS_ID_PFR0_EL1            ARM64_SYS_REG(3, 0, 0, 1, 0)
+#define SYS_ID_PFR1_EL1            ARM64_SYS_REG(3, 0, 0, 1, 1)
+#define SYS_ID_PFR2_EL1            ARM64_SYS_REG(3, 0, 0, 3, 4)
+#define SYS_ID_DFR0_EL1            ARM64_SYS_REG(3, 0, 0, 1, 2)
+#define SYS_ID_MMFR0_EL1           ARM64_SYS_REG(3, 0, 0, 1, 4)
+#define SYS_ID_MMFR1_EL1           ARM64_SYS_REG(3, 0, 0, 1, 5)
+#define SYS_ID_MMFR2_EL1           ARM64_SYS_REG(3, 0, 0, 1, 6)
+#define SYS_ID_MMFR3_EL1           ARM64_SYS_REG(3, 0, 0, 1, 7)
+#define SYS_ID_MMFR4_EL1           ARM64_SYS_REG(3, 0, 0, 2, 6)
+#define SYS_ID_ISAR0_EL1           ARM64_SYS_REG(3, 0, 0, 2, 0)
+#define SYS_ID_ISAR1_EL1           ARM64_SYS_REG(3, 0, 0, 2, 1)
+#define SYS_ID_ISAR2_EL1           ARM64_SYS_REG(3, 0, 0, 2, 2)
+#define SYS_ID_ISAR3_EL1           ARM64_SYS_REG(3, 0, 0, 2, 3)
+#define SYS_ID_ISAR4_EL1           ARM64_SYS_REG(3, 0, 0, 2, 4)
+#define SYS_ID_ISAR5_EL1           ARM64_SYS_REG(3, 0, 0, 2, 5)
+#define SYS_ID_ISAR6_EL1           ARM64_SYS_REG(3, 0, 0, 2, 7)
+#define SYS_MVFR0_EL1              ARM64_SYS_REG(3, 0, 0, 3, 0)
+#define SYS_MVFR1_EL1              ARM64_SYS_REG(3, 0, 0, 3, 1)
+#define SYS_MVFR2_EL1              ARM64_SYS_REG(3, 0, 0, 3, 2)
+#define SYS_ID_AA64PFR0_EL1        ARM64_SYS_REG(3, 0, 0, 4, 0)
+#define SYS_ID_AA64PFR1_EL1        ARM64_SYS_REG(3, 0, 0, 4, 1)
+#define SYS_ID_AA64DFR0_EL1        ARM64_SYS_REG(3, 0, 0, 5, 0)
+#define SYS_ID_AA64ISAR0_EL1       ARM64_SYS_REG(3, 0, 0, 6, 0)
+#define SYS_ID_AA64ISAR1_EL1       ARM64_SYS_REG(3, 0, 0, 6, 1)
+#define SYS_ID_AA64MMFR0_EL1       ARM64_SYS_REG(3, 0, 0, 7, 0)
+#define SYS_ID_AA64MMFR1_EL1       ARM64_SYS_REG(3, 0, 0, 7, 1)
+#define SYS_ID_AA64MMFR2_EL1       ARM64_SYS_REG(3, 0, 0, 7, 2)
+
+struct SysRegInfo {
+    const char *name;
+    uint64_t reg;
+    uint64_t value;
+};
+
+const struct SysRegInfo sys_regs_info[] = {
+    { "ID_PFR0_EL1", SYS_ID_PFR0_EL1, 0 },
+    { "ID_PFR1_EL1", SYS_ID_PFR1_EL1, 0 },
+    { "ID_PFR2_EL1", SYS_ID_PFR2_EL1, 0 },
+    { "ID_DFR0_EL1", SYS_ID_DFR0_EL1, 0 },
+    { "ID_MMFR0_EL1", SYS_ID_MMFR0_EL1, 0 },
+    { "ID_MMFR1_EL1", SYS_ID_MMFR1_EL1, 0 },
+    { "ID_MMFR2_EL1", SYS_ID_MMFR2_EL1, 0 },
+    { "ID_MMFR3_EL1", SYS_ID_MMFR3_EL1, 0 },
+    { "ID_MMFR4_EL1", SYS_ID_MMFR4_EL1, 0 },
+    { "ID_ISAR0_EL1", SYS_ID_ISAR0_EL1, 0 },
+    { "ID_ISAR1_EL1", SYS_ID_ISAR1_EL1, 0 },
+    { "ID_ISAR2_EL1", SYS_ID_ISAR2_EL1, 0 },
+    { "ID_ISAR3_EL1", SYS_ID_ISAR3_EL1, 0 },
+    { "ID_ISAR4_EL1", SYS_ID_ISAR4_EL1, 0 },
+    { "ID_ISAR5_EL1", SYS_ID_ISAR5_EL1, 0 },
+    { "ID_ISAR6_EL1", SYS_ID_ISAR6_EL1, 0 },
+    { "MVFR0_EL1", SYS_MVFR0_EL1, 0 },
+    { "MVFR1_EL1", SYS_MVFR1_EL1, 0 },
+    { "MVFR2_EL1", SYS_MVFR2_EL1, 0 },
+    { "ID_AA64PFR0_EL1", SYS_ID_AA64PFR0_EL1, 0x01001111 },
+    { "ID_AA64PFR1_EL1", SYS_ID_AA64PFR1_EL1, 0 },
+    { "ID_AA64DFR0_EL1", SYS_ID_AA64DFR0_EL1, 0x10305106 },
+    { "ID_AA64ISAR0_EL1", SYS_ID_AA64ISAR0_EL1, 0x10000 },
+    { "ID_AA64ISAR1_EL1", SYS_ID_AA64ISAR1_EL1, 0 },
+    { "ID_AA64MMFR0_EL1", SYS_ID_AA64MMFR0_EL1, 0x1124 },
+    { "ID_AA64MMFR1_EL1", SYS_ID_AA64MMFR1_EL1, 0 },
+    { "ID_AA64MMFR2_EL1", SYS_ID_AA64MMFR2_EL1, 0 },
+};
+
+/* PHYTIUM : modify sys_regs for phytium-v. */
+static int modify_arm_vcpu_regs_for_phytium_v(ARMCPU *cpu)
+{
+    int ret = 0;
+    CPUState *cs = CPU(cpu);
+    Object *obj = OBJECT(cpu);
+    ARMCPUClass *acc = ARM_CPU_GET_CLASS(obj);
+
+    if (NULL != acc->info && 0 == strcmp(acc->info->name, "phytium-v")) {
+        uint64_t val = 0;
+        for (int i = 0; i < ARRAY_SIZE(sys_regs_info); i++) {
+            val = sys_regs_info[i].value;
+            ret = kvm_set_one_reg(cs, sys_regs_info[i].reg, &val);
+            if (ret) {
+                break;
+            }
+        }
+    }
+
+    return ret;
+}
+
 int kvm_arch_init_vcpu(CPUState *cs)
 {
     int ret;
@@ -602,6 +689,20 @@ int kvm_arch_init_vcpu(CPUState *cs)
     ret = kvm_arm_vcpu_init(cs);
     if (ret) {
         return ret;
+    }
+
+    /*
+     * For Phytium only, we'll modify registers' value like ID_AA64ISAR0_EL1
+     * before the virtual machine used for live-migration is started to ensure
+     * that the virtual machine is successfully migrated between different
+     * models of Phytium servers.
+     * Of course, the above will only happen if the CPU model "phytium-v"
+     * is selected during live migration.
+     */
+    if (is_phytium_cpu()) {
+        ret = modify_arm_vcpu_regs_for_phytium_v(cpu);
+        if (ret < 0)
+            return ret;
     }
 
     if (cpu_isar_feature(aa64_sve, cpu)) {

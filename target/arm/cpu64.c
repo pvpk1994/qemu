@@ -741,10 +741,23 @@ static void aarch64_max_initfn(Object *obj)
     }
 }
 
+static void aarch64_phytium_v_initfn(Object *obj)
+{
+    ARMCPU *cpu = ARM_CPU(obj);
+
+    if (kvm_enabled()) {
+        kvm_arm_set_cpu_features_from_host(cpu);
+    } else {
+        aarch64_a53_initfn(obj);
+        cpu->midr = 0x701f6622;
+    }
+}
+
 static const ARMCPUInfo aarch64_cpus[] = {
     { .name = "cortex-a57",         .initfn = aarch64_a57_initfn },
     { .name = "cortex-a53",         .initfn = aarch64_a53_initfn },
     { .name = "max",                .initfn = aarch64_max_initfn },
+    { .name = "phytium-v",          .initfn = aarch64_phytium_v_initfn },
 #if defined(CONFIG_KVM) || defined(CONFIG_HVF)
     { .name = "host",               .initfn = aarch64_host_initfn },
 #endif

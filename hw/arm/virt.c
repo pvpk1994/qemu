@@ -222,6 +222,7 @@ static const char *valid_cpus[] = {
     ARM_CPU_TYPE_NAME("cortex-a57"),
     ARM_CPU_TYPE_NAME("host"),
     ARM_CPU_TYPE_NAME("max"),
+    ARM_CPU_TYPE_NAME("phytium-v"),
 };
 
 static bool cpu_type_valid(const char *cpu)
