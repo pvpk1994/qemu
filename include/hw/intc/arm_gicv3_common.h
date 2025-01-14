@@ -181,6 +181,7 @@ struct GICv3CPUState {
     /* CPU interface */
     uint64_t icc_sre_el1;
     uint64_t icc_ctlr_el1[2];
+    uint64_t icc_ctlr_el1_origin[2];
     uint64_t icc_pmr_el1;
     uint64_t icc_bpr[3];
     uint64_t icc_apr[3][4];

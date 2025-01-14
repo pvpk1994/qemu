@@ -88,6 +88,11 @@ static int gicv3_post_load(void *opaque, int version_id)
     gicv3_gicd_no_migration_shift_bug_post_load(s);
 
     if (c->post_load) {
+        /* load origin value of reg icc_ctrl_el1 when migrate vm */
+        for (int ncpu = 0; ncpu < s->num_cpu; ncpu++) {
+            GICv3CPUState *cs = &s->cpu[ncpu];
+            cs->icc_ctlr_el1[GICV3_NS] = cs->icc_ctlr_el1_origin[GICV3_NS];
+        }
         c->post_load(s);
     }
     return 0;

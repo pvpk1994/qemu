@@ -700,6 +700,8 @@ static void arm_gicv3_icc_reset(CPUARMState *env, const ARMCPRegInfo *ri)
                       KVM_VGIC_ATTR(ICC_CTLR_EL1, c->gicr_typer),
                       &c->icc_ctlr_el1[GICV3_NS], false, &error_abort);
 
+    /* save origin value of reg icc_ctrl_el1 for vm migration to use */
+    c->icc_ctlr_el1_origin[GICV3_S] = c->icc_ctlr_el1[GICV3_NS];
     c->icc_ctlr_el1[GICV3_S] = c->icc_ctlr_el1[GICV3_NS];
 }
 
@@ -720,6 +722,12 @@ static void kvm_arm_gicv3_reset_hold(Object *obj)
     }
 
     kvm_arm_gicv3_put(s);
+
+    /* save origin value of reg icc_ctrl_el1 */
+    for (int ncpu = 0; ncpu < s->num_cpu; ncpu++) {
+        GICv3CPUState *c = &s->cpu[ncpu];
+        c->icc_ctlr_el1_origin[GICV3_NS] = c->icc_ctlr_el1[GICV3_NS];
+    }
 }
 
 /*

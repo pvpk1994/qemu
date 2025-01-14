@@ -32,6 +32,7 @@
 #include "hw/irq.h"
 #include "qapi/visitor.h"
 #include "qemu/log.h"
+#include "qemu/aarch64-cpuid.h"
 
 const KVMCapabilityInfo kvm_arch_required_capabilities[] = {
     KVM_CAP_LAST_INFO
@@ -469,6 +470,56 @@ static uint64_t *kvm_arm_get_cpreg_ptr(ARMCPU *cpu, uint64_t regidx)
     return &cpu->cpreg_values[res - cpu->cpreg_indexes];
 }
 
+/* PHYTIUM: check compatibility for live migration. */
+static bool check_compatibility_for_phytium(ARMCPU *cpu)
+{
+    Object *obj = OBJECT(cpu);
+    ARMCPUClass *acc = ARM_CPU_GET_CLASS(obj);
+
+    int i;
+    bool ret = true;
+    uint8_t src_impl = 0;
+    uint16_t src_partnum = 0;
+    uint64_t src_midr = 0;
+
+    if (NULL != acc->info && 0 == strcmp(acc->info->name, "phytium-v"))
+        ret = true;
+    else {
+        for (i = 0; i < cpu->cpreg_array_len; i++) {
+            uint64_t regidx = cpu->cpreg_indexes[i];
+            if (regidx == ARM64_SYS_REG(3, 0, 0, 0, 0)) {
+                src_midr = cpu->cpreg_values[i];
+                src_impl = (src_midr >> 24) & 0xff;
+                src_partnum = (src_midr >> 4) & 0x0fff;
+                break;
+            }
+        }
+
+        if (src_impl == ARM_CPU_IMP_PHYTIUM) {
+            if (is_phytium_cpu()) {
+                if (qemu_read_cpuid_part_number() >= src_partnum) {
+                    ret = true;
+                } else {
+                    ret = false;
+                }
+            } else if (qemu_read_cpuid_implementor() == 0x48) {
+                if (src_partnum == PHYTIUM_CPU_PART_FTC662
+                    || src_partnum == PHYTIUM_CPU_PART_FTC663) {
+                    ret = true;
+                } else {
+                    ret = false;
+                }
+            } else {
+                ret = false;
+            }
+        } else {
+            ret = false;
+        }
+    }
+
+    return ret;
+}
+
 /* Initialize the ARMCPU cpreg list according to the kernel's
  * definition of what CPU registers it knows about (and throw away
  * the previous TCG-created cpreg list).
@@ -612,7 +663,7 @@ bool write_list_to_kvmstate(ARMCPU *cpu, int level)
              * "you tried to set a register which is constant with
              * a different value from what it actually contains".
              */
-            ok = false;
+            ok = check_compatibility_for_phytium(cpu);
         }
     }
     return ok;
