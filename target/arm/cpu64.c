@@ -753,11 +753,28 @@ static void aarch64_phytium_v_initfn(Object *obj)
     }
 }
 
+static void aarch64_tengyun_s5000c_initfn(Object *obj)
+{
+    ARMCPU *cpu = ARM_CPU(obj);
+
+    if (kvm_enabled()) {
+        kvm_arm_set_cpu_features_from_host(cpu);
+    } else {
+        aarch64_a53_initfn(obj);
+        cpu->midr = 0x700f8620;
+    }
+    if (arm_feature(&cpu->env, ARM_FEATURE_AARCH64)) {
+        aarch64_add_sve_properties(obj);
+        aarch64_add_pauth_properties(obj);
+    }
+}
+
 static const ARMCPUInfo aarch64_cpus[] = {
     { .name = "cortex-a57",         .initfn = aarch64_a57_initfn },
     { .name = "cortex-a53",         .initfn = aarch64_a53_initfn },
     { .name = "max",                .initfn = aarch64_max_initfn },
     { .name = "phytium-v",          .initfn = aarch64_phytium_v_initfn },
+    { .name = "Tengyun-S5000C",     .initfn = aarch64_tengyun_s5000c_initfn },
 #if defined(CONFIG_KVM) || defined(CONFIG_HVF)
     { .name = "host",               .initfn = aarch64_host_initfn },
 #endif
