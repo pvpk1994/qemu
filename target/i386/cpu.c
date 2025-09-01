@@ -987,7 +987,7 @@ FeatureWordInfo feature_word_info[FEATURE_WORDS] = {
         .feat_names = {
             NULL, NULL, NULL, NULL,
             "avx-vnni-int8", "avx-ne-convert", NULL, NULL,
-            "amx-complex", NULL, NULL, NULL,
+            "amx-complex", NULL, "avx-vnni-int16", NULL,
             NULL, NULL, "prefetchiti", NULL,
             NULL, NULL, NULL, "avx10",
             NULL, NULL, NULL, NULL,
@@ -7792,8 +7792,10 @@ static bool x86_cpu_filter_features(X86CPU *cpu, bool verbose)
             env->avx10_version = version;
             have_filtered_features = true;
         }
-    } else if (env->avx10_version && prefix) {
-        warn_report("%s: avx10.%d.", prefix, env->avx10_version);
+    } else if (env->avx10_version) {
+        if (prefix) {
+            warn_report("%s: avx10.%d.", prefix, env->avx10_version);
+        }
         have_filtered_features = true;
     }
 
